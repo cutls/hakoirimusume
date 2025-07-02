@@ -7,7 +7,7 @@ type Props = {
     noBorder: boolean
 }
 function Grid(props: Props) {
-	const { x, y, cellPt, noBorder } = props
+	const { cellPt, noBorder } = props
     const style: CSSProperties = {
         width: `${cellPt}px`,
         height: `${cellPt}px`,
