@@ -103,6 +103,7 @@ function App() {
 			<button type="button" onClick={() => reset()}>
 				リセット
 			</button>
+			<p style={{ fontFamily: 'sans-serif', fontSize: 10, marginTop: 20 }}>(c) cutls 2025 <a href="https://github.com/cutls/hakoirimusume" target="_blank" rel="noreferrer" className="link">GitHub</a></p>
 			<dialog ref={dialogRef}>
 				<p style={{ fontSize: 20 }}>{step}手でクリア！</p>
 				<p>
