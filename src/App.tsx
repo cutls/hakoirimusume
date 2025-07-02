@@ -20,17 +20,25 @@ function App() {
 		const boundIn = after.x >= 0 && after.x < 6 && after.y >= 0 && after.y < 6 && after.x + indexW <= 6 && after.y + indexH <= 6
 		if (iam !== 'daughter' && !boundIn) return false
 		if (iam === 'daughter' && !boundIn && !(after.x === 2 && after.y === 4)) return false
-		for (const key of Object.keys(state) as Key[]) {
+		for (const key of keys) {
+			console.log(key, state[key])
 			if (key === iam) continue
 			const { x, y, width, height } = state[key]
 			let isXNg = false
 			if (x >= before.x && after.x + indexW > x) isXNg = true
-			if (x <= before.x && after.x <= x + width) isXNg = true
+			console.log(x, before.x, after.x + indexW, x)
+			if (x <= before.x && after.x < x + width) isXNg = true
+			console.log(x, before.x, after.x, x + width)
 			let isYNg = false
 			if (y >= before.y && after.y + indexH > y) isYNg = true
-			if (y <= before.y && after.y <= y + height) isYNg = true
-			if (isXNg && isYNg) return false
+			if (y <= before.y && after.y < y + height) isYNg = true
+			console.log(after.y, y + height)
+			if (isXNg && isYNg) {
+				console.log('step complete', isXNg, isYNg)
+				return false
+			}
 		}
+		console.log('step complete')
 		return true
 	}
 	const handleStop = (d: DraggableData) => {
