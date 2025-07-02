@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import Draggable, { type DraggableData, type DraggableEvent } from 'react-draggable'
-import { initialState, type Key } from './type'
+import { step1, type Key } from './type'
 type Props = {
 	name: Key
 	width: number
@@ -14,7 +14,7 @@ type Props = {
 }
 function Cell(props: Props) {
 	const { name, width, height, x, y, handleDrag, handleStop, handleStart, cellPt } = props
-	const { name: title, kana } = initialState[name]
+	const { name: title, kana } = step1[name]
 	const style: CSSProperties = {
 		width: `${cellPt * width}px`,
 		height: `${cellPt * height}px`,

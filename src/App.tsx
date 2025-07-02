@@ -3,13 +3,17 @@ import './App.css'
 import Cell from './Cell'
 import Grid from './Grid'
 import type { DraggableData, DraggableEvent } from 'react-draggable'
-import { initialState, type StateType, type Key, keys } from './type'
+import { boards, type StateType, type Key, keys, type BoardType } from './type'
 import { useWindowSize } from './useWidowSize'
 type Position = { x: number; y: number }
 function App() {
 	const [width] = useWindowSize()
 	const oneCell = width > 500 ? 80 : 50
-	const dialogRef = useRef<HTMLDialogElement>(null)
+	const dialog0Ref = useRef<HTMLDialogElement>(null)
+	const dialog1Ref = useRef<HTMLDialogElement>(null)
+	const [type, setType] = useState<BoardType>('step1')
+	const initialState: StateType = boards[type].board
+	const meta = boards[type].meta
 	const [state, setState] = useState<StateType>(initialState)
 	const [axis, setAxis] = useState<'x' | 'y' | 'both'>('both')
 	const [step, setStep] = useState(0)
@@ -17,17 +21,16 @@ function App() {
 	const [snapshot, setSnapshot] = useState<StateType>(initialState)
 	const isIn = (before: Position, after: Position, iam: Key) => {
 		const { width: indexW, height: indexH } = state[iam]
-		const boundIn = after.x >= 0 && after.x < 6 && after.y >= 0 && after.y < 6 && after.x + indexW <= 6 && after.y + indexH < 6
-		console.log(after.x, indexW, after.x + indexW < 6, boundIn)
+		const boundIn = after.x >= 0 && after.x < meta.width && after.y >= 0 && after.y <= meta.height && after.x + indexW <= meta.width && after.y + indexH <= meta.height
 		if (iam !== 'daughter' && !boundIn) return false
-		if (iam === 'daughter' && !boundIn && !(after.x === 2 && after.y === 4)) return false
+		if (iam === 'daughter' && !boundIn && !(after.x === Math.floor(meta.width / 2) - 1 && after.y === meta.height - 1)) return false
 		for (const key of keys) {
 			if (key === iam) continue
 			const { x, y, width, height } = state[key]
+			if (width === 0 || height === 0) continue // Skip empty cells
 			let isXNg = false
 			if (x >= before.x && after.x + indexW > x) isXNg = true
 			if (x <= before.x && after.x < x + width) isXNg = true
-			//console.log(x, before.x, after.x, indexW, width)
 			let isYNg = false
 			if (y >= before.y && after.y + indexH > y) isYNg = true
 			if (y <= before.y && after.y < y + height) isYNg = true
@@ -40,13 +43,14 @@ function App() {
 		setAxis('both')
 	}
 	const handleStart = (_d: DraggableData) => setSnapshot(state)
-	const reset = () => {
-		setState(initialState)
+	const reset = (type: BoardType) => {
+		setType(type)
+		setState(boards[type].board)
 		setAxis('both')
 		setStep(0)
 		setIsReach(false)
-		setSnapshot(initialState)
-		dialogRef.current?.close()
+		setSnapshot(boards[type].board)
+		dialog1Ref.current?.close()
 	}
 	const handleDrag = (_e: DraggableEvent, data: DraggableData, index: Key) => {
 		const { x, y, deltaX, deltaY } = data
@@ -57,8 +61,8 @@ function App() {
 		const before = { x: state[index].x, y: state[index].y }
 		const after = { x: indexX, y: indexY }
 		if (!isIn(before, after, index)) return
-		if (index === 'daughter' && indexX === 2 && indexY === 3) setIsReach(true)
-		if (index === 'daughter' && indexX === 2 && indexY === 4) dialogRef.current?.showModal()
+		if (index === 'daughter' && indexX === Math.floor(meta.width / 2) - 1 && indexY === meta.height - 2) setIsReach(true)
+		if (index === 'daughter' && indexX === Math.floor(meta.width / 2) - 1 && indexY === meta.height - 1) dialog1Ref.current?.showModal()
 		setState((prevState) => {
 			return {
 				...prevState,
@@ -75,43 +79,83 @@ function App() {
 	return (
 		<div className="root">
 			<h1>箱入り娘パズル</h1>
+			<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+				<select value={type} onChange={(e) => reset(e.target.value as BoardType)}>
+					{Object.entries(boards).map(([key, value]) => (
+						<option key={key} value={key}>
+							{value.meta.title}
+						</option>
+					))}
+				</select>
+				{/** biome-ignore lint/a11y/useValidAnchor: <For btn> */}
+				<a href="#" onClick={() => dialog0Ref.current?.showModal()} className="link" style={{ fontSize: 12 }}>
+					ヘルプ
+				</a>
+			</div>
 			<div className="grid">
-				{Array.from({ length: 5 }, (_, i) => (
+				{Array.from({ length: meta.height }, (_, i) => (
 					<div key={`${i.toString()}`} style={{ height: `${oneCell}px` }} className="grid-row">
-						{Array.from({ length: 6 }, (_, j) => (
-							<Grid key={`${i}-${j.toString()}`} x={j} y={i} cellPt={oneCell} />
+						{Array.from({ length: meta.width }, (_, j) => (
+							<Grid noBorder={(j === Math.floor(meta.width / 2) - 1 || j === meta.width / 2) && i === meta.height - 1} key={`${i}-${j.toString()}`} x={j} y={i} cellPt={oneCell} />
 						))}
 					</div>
 				))}
-				{keys.map((key) => (
-					<Cell
-						key={key}
-						name={key}
-						width={state[key].width}
-						cellPt={oneCell}
-						height={state[key].height}
-						x={state[key].x}
-						y={state[key].y}
-						handleDrag={handleDrag}
-						handleStop={handleStop}
-						handleStart={handleStart}
-					/>
-				))}
+				{keys.map(
+					(key) =>
+						state[key].width > 0 && (
+							<Cell
+								key={key}
+								name={key}
+								width={state[key].width}
+								cellPt={oneCell}
+								height={state[key].height}
+								x={state[key].x}
+								y={state[key].y}
+								handleDrag={handleDrag}
+								handleStop={handleStop}
+								handleStart={handleStart}
+							/>
+						)
+				)}
 			</div>
 			{isReach && <div>↓もう1マス下へ！↓</div>}
 			<p>{step}手</p>
-			<button type="button" onClick={() => reset()}>
+			<button type="button" onClick={() => reset(type)}>
 				リセット
 			</button>
-			<p style={{ fontFamily: 'sans-serif', fontSize: 10, marginTop: 20 }}>(c) cutls 2025 <a href="https://github.com/cutls/hakoirimusume" target="_blank" rel="noreferrer" className="link">GitHub</a></p>
-			<dialog ref={dialogRef}>
+			<p style={{ fontFamily: 'sans-serif', fontSize: 10, marginTop: 20 }}>
+				(c) cutls 2025{' '}
+				<a href="https://github.com/cutls/hakoirimusume" target="_blank" rel="noreferrer" className="link">
+					GitHub
+				</a>
+			</p>
+			<dialog className="long" open ref={dialog0Ref}>
+				<h3>パズルの目標</h3>
+				<img src="goal.webp" alt="目標" style={{ width: '80%', border: '2px solid #000' }} />
+				<p>写真のように、"娘"を下の段の中央に移動させましょう。</p>
+				<img src="goal2.webp" alt="目標2" style={{ width: '80%', border: '2px solid #000' }} />
+				<p>最後は"娘"を下に移動させて完成です。</p>
+				<div style={{ textAlign: 'left', fontSize: 12, marginBottom: 10 }}>
+					なお、
+					<a href="https://kainaga.web.fc2.com/madchen/madchen.htm" target="_blank" rel="noreferrer">
+						箱入り娘パズルの攻略法
+					</a>
+					によると、
+					<br />
+					ステップ1は最短81手、ステップ2は最短123手、ステップ3は最短138手でクリアできるようです。
+				</div>
+				<button type="button" onClick={() => dialog0Ref.current?.close()}>
+					閉じる
+				</button>
+			</dialog>
+			<dialog ref={dialog1Ref}>
 				<p style={{ fontSize: 20 }}>{step}手でクリア！</p>
 				<p>
-					<a className="x-post" href={`https://x.com/intent/post?text=箱入り娘パズルを${step}手でクリア！ https://hakoiri-musume.vercel.app`} target="_blank" rel="noreferrer">
+					<a className="x-post" href={`https://x.com/intent/post?text=箱入り娘パズル(${meta.title})を${step}手でクリア！ https://hakoiri-musume.vercel.app`} target="_blank" rel="noreferrer">
 						Xに投稿
 					</a>
 				</p>
-				<button type="button" onClick={() => reset()}>
+				<button type="button" onClick={() => reset(type)}>
 					もう一度遊ぶ
 				</button>
 			</dialog>

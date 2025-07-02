@@ -4,10 +4,10 @@ type Props = {
     x: number
     y: number
     cellPt: number
+    noBorder: boolean
 }
 function Grid(props: Props) {
-	const { x, y, cellPt } = props
-    const noBorder = y === 4 && (x === 2 || x === 3)
+	const { x, y, cellPt, noBorder } = props
     const style: CSSProperties = {
         width: `${cellPt}px`,
         height: `${cellPt}px`,
