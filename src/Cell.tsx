@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { type CSSProperties } from 'react'
 import Draggable, { type DraggableData, type DraggableEvent } from 'react-draggable'
 import { initialState, type Key } from './type'
 type Props = {
